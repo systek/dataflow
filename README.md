@@ -37,7 +37,7 @@ are available, execution of the cappuccino step is scheduled.
 And the brew step cannot start before it has received its required inputs from heatWater and GrindBeans. And so on.
 
 ## Conditions and loops
-It is also possible to use conditions and loops. If the heated water is not hot enough, it is re-heated again.
+It is also possible to use conditions and loops to build more complex graphs. For example if the heated water is not hot enough, it is re-heated again.
 
 ```
 GrindBeans---------------------------+
@@ -63,14 +63,18 @@ heatWater.dependsOn(waterHotEnough.ifFalse());
 ```
 
 ## Parallel execution
-Like in the actor-model, a step has a mailbox in which inbound input values are queued. As soon as a new input value is queued
-in this mailbox, the step gets ready to be executed.
+Like in the actor-model, a step has a mailbox in which inbound input values are queued. As soon 
+as a new input value is queued in this mailbox, the step gets ready to be executed.
 
-All steps which are ready to be executed, thus not awaiting some input, are executed in parallel. The max number of concurrent executions is configurable via 
-the included task scheduler [PriorityTaskQueue](https://github.com/systek/dataflow/blob/master/src/main/java/com/dehnes/dataflow/PriorityTaskQueue.java)). 
+All steps which are ready to be executed, thus not awaiting some input, are executed in parallel. 
+The max number of concurrent executions is configurable via the included task scheduler 
+[PriorityTaskQueue](https://github.com/systek/dataflow/blob/master/src/main/java/com/dehnes/dataflow/PriorityTaskQueue.java)). 
 
-Unlike actors, where a single actor can never be executed in parallel, a step ***can*** be executed in parallel as soon as more
-input values become available while it is already being executed. This is configurable by setting the step property "maxParallelExecution" to
-larger than 1. Of course any internal state in the step becomes now subject to concurrent access and must be protected accordingly.
+Unlike actors, where a single actor can never be executed in parallel, a single step ***can*** be 
+executed in parallel as soon as more input values become available while it is already being 
+executed. This is configurable by setting the step property "maxParallelExecution" to larger 
+than 1. Of course any internal state in the step becomes now subject to concurrent access and must 
+be protected accordingly.
+
 
 
