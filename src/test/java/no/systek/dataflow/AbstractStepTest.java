@@ -1,4 +1,7 @@
-package com.dehnes.dataflow;
+package no.systek.dataflow;
+
+import no.systek.dataflow.PriorityTaskQueue;
+import no.systek.dataflow.Step;
 
 import java.util.LinkedList;
 import java.util.List;

@@ -1,5 +1,6 @@
-package com.dehnes.dataflow;
+package no.systek.dataflow;
 
+import no.systek.dataflow.PriorityTaskQueue;
 import org.junit.Test;
 
 import java.util.LinkedList;

@@ -1,4 +1,4 @@
-package com.dehnes.dataflow;
+package no.systek.dataflow;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

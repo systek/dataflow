@@ -1,4 +1,4 @@
-package com.dehnes.dataflow;
+package no.systek.dataflow;
 
 import java.util.LinkedList;
 import java.util.List;
