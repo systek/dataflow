@@ -68,7 +68,7 @@ as a new input value is queued in this mailbox, the step gets ready to be execut
 
 All steps which are ready to be executed, thus not awaiting some input, are executed in parallel. 
 The max number of concurrent executions is configurable via the included task scheduler 
-[PriorityTaskQueue](https://github.com/systek/dataflow/blob/master/src/main/java/com/dehnes/dataflow/PriorityTaskQueue.java)). 
+[PriorityTaskQueue](https://github.com/systek/dataflow/blob/master/src/main/java/com/dehnes/dataflow/PriorityTaskQueue.java). 
 
 Unlike actors, where a single actor can never be executed in parallel, a single step ***can*** be 
 executed in parallel as soon as more input values become available while it is already being 
@@ -76,5 +76,57 @@ executed. This is configurable by setting the step property "maxParallelExecutio
 than 1. Of course any internal state in the step becomes now subject to concurrent access and must 
 be protected accordingly.
 
+## Collectors
+After a fork-out where processing is done in parallel, it might be desirable to join the output of those parallel steps again. This can be done with so called collector step. 
 
+Image you want to process an order which contains multiple order lines. Each order line is processed in parallel but shipping and invoicing is only once done once for entire order:
+
+```
+orderLineSplitter -----> parallelOrderLineProcessor
+                                   |
+                                   v
+                           lineNeedsShipping
+                               |     |
+               +------yes------+     no
+               v                     |
+       collectForShipping      collectNoShipping
+               |                     |
+               |                     v
+          shipAllItems--------> createInvoice
+                                     |
+                                     v
+                                 sendInvoice
+                                     |
+                                     v
+                                  finished
+```
+
+```java
+finished.dependsOn(sendInvoice.output())
+
+sendInvoice.dependsOn(createInvoice.output())
+
+createInvoice.dependsOn(shipAllItems.output())
+createInvoice.dependsOn(collectNoShipping.output())
+
+collectNoShipping.dependsOn(lineNeedsShipping.ifFalse())
+
+shipAllItems.dependsOn(collectForShipping.output())
+collectForShipping.dependsOn(lineNeedsShipping.ifTrue())
+
+lineNeedsShipping.dependsOn(parallelOrderLineProcessor.output())
+
+parallelOrderLineProcessor.dependsOn(orderLineSplitter.output())
+
+// and now execute the entire graph with order as input
+finished.executeTasksAndAwaitDone(order);
+```
+
+In this example, the step orderLineProcessor is permitted to execute in parallel. The orderLineSplitter takes the 
+entire order as input and procudes outputs for each order line. As soon as a new order line is sendt to orderLineProcessor, processing starts in parallel. After order line processing, the results are collected depending on whether shipping is needed or not.
+
+But how does a collector step know when to proceed, e.g. that there will be no more inputs arriving? 
+This information is derived from the fact that there are no more steps executing and thus all
+are awaiting more input. A collector step schedules a cleanup task in the taskScheduler with a lower pririty, 
+which gets only executed once all other steps have finished. See [CollectorStep](https://github.com/systek/dataflow/blob/master/src/main/java/no/systek/dataflow/Steps.java#L172).
 
