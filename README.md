@@ -12,7 +12,7 @@ are really useful for optimistic locking.
 
 ## Simple Example
 
-From the [CappuccinoTest](https://github.com/systek/dataflow/blob/master/src/test/java/com/dehnes/dataflow/CappuccinoTest.java#L18), 
+From the [CappuccinoTest](https://github.com/systek/dataflow/blob/master/src/test/java/no/systek/dataflow/CappuccinoTest.java#L18), 
 the following steps produce one cappuccino:
 
 ```
@@ -68,7 +68,7 @@ as a new input value is queued in this mailbox, the step gets ready to be execut
 
 All steps which are ready to be executed, thus not awaiting some input, are executed in parallel. 
 The max number of concurrent executions is configurable via the included task scheduler 
-[PriorityTaskQueue](https://github.com/systek/dataflow/blob/master/src/main/java/com/dehnes/dataflow/PriorityTaskQueue.java). 
+[PriorityTaskQueue](https://github.com/systek/dataflow/blob/master/src/main/java/no/systek/dataflow/PriorityTaskQueue.java). 
 
 Unlike actors, where a single actor can never be executed in parallel, a single step ***can*** be 
 executed in parallel as soon as more input values become available while it is already being 
