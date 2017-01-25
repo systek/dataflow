@@ -2,11 +2,28 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
+    <modelVersion>4.0.0</modelVersion>
+
     <artifactId>dataflow</artifactId>
     <groupId>no.systek.dataflow</groupId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.1</version>
+    <packaging>jar</packaging>
 
-    <modelVersion>4.0.0</modelVersion>
+    <name>dataflow</name>
+    <description>Dataflow execution library for java</description>
+    <url>https://github.com/systek/dataflow</url>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>https://github.com/systek/dataflow</url>
+    </scm>
 
     <properties>
         <compileSource>1.8</compileSource>
@@ -34,6 +51,20 @@
                         <include>**/*Test.java</include>
                     </includes>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

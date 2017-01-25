@@ -1,13 +1,15 @@
 package no.systek.dataflow;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
 
 public class CappuccinoTest extends AbstractStepTest {
 
@@ -58,7 +60,7 @@ public class CappuccinoTest extends AbstractStepTest {
         waterHotEnough.dependsOn(heatWater.output());
         heatWater.dependsOn(waterHotEnough.ifFalse());
 
-        Assert.assertThat(run(cappuccino, "CappuccinoOrder", 5).size(), is(1));
+        assertThat(stepExecutor.execute(cappuccino, "CappuccinoOrder"), notNullValue());
     }
 
     @Test
@@ -120,7 +122,8 @@ public class CappuccinoTest extends AbstractStepTest {
         grindBeans.dependsOn(orderSplitter.output());
         foamMilk.dependsOn(orderSplitter.output());
 
-        Assert.assertThat(run(cappuccino, Arrays.asList("Order1", "order2", "order3"), 5).size(), is(3));
+        List<Object> cappuccinos = stepExecutor.executeList(cappuccino, Arrays.asList("Order1", "order2", "order3"));
+        assertThat(cappuccinos.size(), is(3));
     }
 
     private static <T> T work(T doneValue, String task) {

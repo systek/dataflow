@@ -1,37 +1,29 @@
 package no.systek.dataflow;
 
-import no.systek.dataflow.PriorityTaskQueue;
-import no.systek.dataflow.Step;
+import org.junit.After;
+import org.junit.Before;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
-
 public abstract class AbstractStepTest {
 
-    List<Object> run(Step tail, Object input, int treads) {
-        ExecutorService executorService = Executors.newFixedThreadPool(treads);
-        try {
-            List<Object> results = new LinkedList<>();
-            assertThat(tail.executeTasksAndAwaitDone(
-                    new PriorityTaskQueue(treads, () -> null, s -> {
-                    }),
-                    executorService,
-                    Throwable::printStackTrace,
-                    input,
-                    results::add,
-                    10,
-                    TimeUnit.SECONDS
-            ), is(true));
-            return results;
-        } finally {
-            executorService.shutdown();
-        }
+    private ExecutorService executorService;
+    protected StepExecutor stepExecutor;
 
+    @Before
+    public void setup() {
+        executorService = Executors.newFixedThreadPool(5);
+        stepExecutor = new StepExecutor(executorService, s -> {
+        }, () -> null, 5, 10, TimeUnit.SECONDS);
     }
+
+    @After
+    public void cleanup() {
+        executorService.shutdown();
+        executorService = null;
+        stepExecutor = null;
+    }
+
 }
