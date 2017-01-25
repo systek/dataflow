@@ -3,6 +3,15 @@
 A small library, which lets you define tasks (called steps) and their dependencies among each other, 
 and then execute them (in parallel if allowed) according to their dependency graph.
 
+## Usag
+```
+<dependency>
+  <artifactId>dataflow</artifactId>
+  <groupId>no.systek.dataflow</groupId>
+  <version>0.1</version>
+</dependency>
+```
+
 ## "Step"
 Similar to "[actors](https://en.wikipedia.org/wiki/Actor_model)", a step is a piece of work which is executed as some 
 input arrives and can produce one or more outputs during execution.
