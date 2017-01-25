@@ -3,7 +3,7 @@
 A small library, which lets you define tasks (called steps) and their dependencies among each other, 
 and then execute them (in parallel if allowed) according to their dependency graph.
 
-## Usag
+## Usage
 ```
 <dependency>
   <artifactId>dataflow</artifactId>
