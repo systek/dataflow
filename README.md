@@ -24,7 +24,7 @@ are really useful for optimistic locking.
 
 ## Simple Example
 
-From the [CappuccinoTest](https://github.com/systek/dataflow/blob/master/src/test/java/no/systek/dataflow/CappuccinoTest.java#L18), 
+From the [CappuccinoTest](https://github.com/systek/dataflow/blob/master/src/test/java/no/systek/dataflow/CappuccinoTest.java#L29), 
 the following steps produce one cappuccino:
 
 ```
@@ -162,5 +162,5 @@ collected depending on whether shipping is needed or not.
 But how does a collector step know when to proceed, e.g. that there will be no more inputs arriving? 
 This information is derived from the fact that there are no more steps executing and thus all
 are awaiting more input. A collector step schedules a cleanup task in the taskScheduler with a lower pririty, 
-which gets only executed once all other steps have finished. See [CollectorStep](https://github.com/systek/dataflow/blob/master/src/main/java/no/systek/dataflow/Steps.java#L172).
+which gets only executed once all other steps have finished. See [CollectorStep](https://github.com/systek/dataflow/blob/master/src/main/java/no/systek/dataflow/steps/CollectorStep.java#L38).
 
