@@ -1,9 +1,8 @@
 [![Build Status](https://travis-ci.org/systek/dataflow.svg?branch=master)](https://travis-ci.org/systek/dataflow)
 
 # dataflow
-
-A small library, which lets you define tasks (called steps) and their dependencies among each other, 
-and then execute them (in parallel if allowed) according to their dependency graph.
+A Java library, which lets you define dependencies between tasks (called steps) and then execute the entire graph. 
+Steps which have no unresolved dependencies are executed first - in parallel.
 
 ## Usage
 ```
@@ -14,16 +13,19 @@ and then execute them (in parallel if allowed) according to their dependency gra
 </dependency>
 ```
 
+## Requirements
+- Java8
+
+There are no dependencies to other libraries except for SLF4j.
+
 ## "Step"
-Similar to "[actors](https://en.wikipedia.org/wiki/Actor_model)", a step is a piece of work which is executed as some 
-input arrives and can produce one or more outputs during execution. The output which a step produces is passed to the
-next step(s) in the dependency chain.
+Similar to "[actors](https://en.wikipedia.org/wiki/Actor_model)", a step is a piece of work (/task) which is executed as 
+some input arrives and can produce one or more outputs during execution.
 
-Steps can be chained together to (complex) graphs by defining dependencies between then, including loop scenarios which 
-are really useful for optimistic locking. 
+Steps are then linked together to form a graph by defining dependencies between them. Each time a step produces an output, 
+this output is then automatically distributed to it's child steps which get ready to be executed.
 
-## Simple Example
-
+### Simple Example
 From the [CappuccinoTest](https://github.com/systek/dataflow/blob/master/src/test/java/no/systek/dataflow/CappuccinoTest.java#L29), 
 the following steps produce one cappuccino:
 
@@ -48,57 +50,29 @@ To fullfill the cappuccino step it needs input from both the brew and the foamMi
 are available, execution of the cappuccino step is scheduled.
 And the brew step cannot start before it has received its required inputs from heatWater and GrindBeans. And so on.
 
-## Conditions and loops
-It is also possible to use conditions and loops to build more complex graphs. This is really useful when you have 
-a more complex business transaction which require optimistic locking.
+## More complex graphs
+A [Step](https://github.com/systek/dataflow/blob/master/src/main/java/no/systek/dataflow/Step.java) can be easily 
+extended to achieve rich capabilities like *collectors*, *conditional routing* and even *loops*!.
 
-For example if the heated water is not hot enough, it is re-heated again.
+### Conditional step
+The library includes a [ConditionalStep](https://github.com/systek/dataflow/blob/master/src/main/java/no/systek/dataflow/steps/ConditionalStep.java) which allows for 2-way conditional routing. For example:
 
 ```
-GrindBeans---------------------------+
-                                     v 
-HeatWater----> HotEnough?---yes---> brew ------+
-    ^              |                           |
-    +---------no---+                           |
-                                               v
-FoamMilk--------------------------------> Cappuccino
+   PickAppleFromTree
+          |
+          v
+    InGoodCondition?
+          |
+   +-yes--+--yes---+
+   |               |
+   v               v
+ThrowAway       Collect
 ```
 
-Expressed in code like this:
+### Collector step
+After a fork-out where processing is done in parallel, it might be desirable to join the output of those parallel steps again. This can be done with so called [CollectorStep](https://github.com/systek/dataflow/blob/master/src/main/java/no/systek/dataflow/steps/CollectorStep.java). 
 
-```java
-cappuccino.dependsOn(brew.output());
-cappuccino.dependsOn(foamMilk.output());
-
-brew.dependsOn(waterHotEnough.ifTrue());
-brew.dependsOn(grindBeans.output());
-
-waterHotEnough.dependsOn(heatWater.output());
-heatWater.dependsOn(waterHotEnough.ifFalse());
-```
-
-## Parallel execution
-Like in the actor-model, a step has a mailbox in which inbound input values are queued. As soon 
-as a new input value is queued in this mailbox, the step gets ready to be executed.
-
-All steps which are ready to be executed, thus not awaiting some input, are executed in parallel. 
-The max number of concurrent executions is configurable via the included task scheduler 
-[PriorityTaskQueue](https://github.com/systek/dataflow/blob/master/src/main/java/no/systek/dataflow/PriorityTaskQueue.java).
-In our cappucino example above, GrindBeans, HeatWater and FoamMilk will start executing in parallel
- because those do not depend on each other.
-
-Unlike actors, where a single actor can never be executed in parallel, a "step" ***can*** be 
-executed in parallel as soon as more input values become available while it is already being 
-executed. This is configurable by setting the step property "maxParallelExecution" to larger 
-than 1. Of course any internal state in the step becomes now subject to concurrent access and must 
-be protected accordingly.
-
-This is really usefull if you have a stateless step which is expected to process many inputs.
-
-## Collectors
-After a fork-out where processing is done in parallel, it might be desirable to join the output of those parallel steps again. This can be done with so called collector step. 
-
-Image you want to process an order which contains multiple order lines. Each order line is processed in parallel but shipping and invoicing is only once done once for entire order:
+For example, image you want to process an order which contains multiple order lines. Each order line is processed in parallel but shipping and invoicing is only once done once for entire order:
 
 ```
                orderLineSplitter
@@ -158,9 +132,56 @@ takes the entire order as input and procudes outputs for each order line. As soo
 sendt to parallelOrderLineProcessor, processing starts in parallel. After order line processing, the results are 
 collected depending on whether shipping is needed or not.
 
-### Finish collecting?
+#### Finish collecting?
 But how does a collector step know when to proceed, e.g. that there will be no more inputs arriving? 
 This information is derived from the fact that there are no more steps executing and thus all
 are awaiting more input. A collector step schedules a cleanup task in the taskScheduler with a lower pririty, 
 which gets only executed once all other steps have finished. See [CollectorStep](https://github.com/systek/dataflow/blob/master/src/main/java/no/systek/dataflow/steps/CollectorStep.java#L38).
 
+
+### Loops
+It is also possible to use conditions and loops to build more complex graphs. This is really useful when you have 
+a more complex business transaction which require *optimistic locking*.
+
+For example if the heated water is not hot enough, it is re-heated again.
+
+```
+GrindBeans---------------------------+
+                                     v 
+HeatWater----> HotEnough?---yes---> brew ------+
+    ^              |                           |
+    +---------no---+                           |
+                                               v
+FoamMilk--------------------------------> Cappuccino
+```
+
+Expressed in code like this:
+
+```java
+cappuccino.dependsOn(brew.output());
+cappuccino.dependsOn(foamMilk.output());
+
+brew.dependsOn(waterHotEnough.ifTrue());
+brew.dependsOn(grindBeans.output());
+
+waterHotEnough.dependsOn(heatWater.output());
+heatWater.dependsOn(waterHotEnough.ifFalse());
+```
+
+## Parallel execution
+Like in the actor-model, a step has a *mailbox* in which inbound input values are queued. As soon 
+as a new input value is queued in this mailbox, the step gets ready to be executed.
+
+All steps which are ready to be executed, thus not awaiting some input, are executed in parallel. 
+The max number of concurrent executions is configurable via the included task scheduler 
+[PriorityTaskQueue](https://github.com/systek/dataflow/blob/master/src/main/java/no/systek/dataflow/PriorityTaskQueue.java).
+In our cappucino example above, GrindBeans, HeatWater and FoamMilk will start executing in parallel
+ because those do not depend on each other.
+
+Unlike actors, where a single actor can never be executed in parallel, a "step" in this library ***can*** be 
+executed in parallel as soon as more input values become available while it is already being 
+executed. This is configurable by setting the step property "maxParallelExecution" to larger 
+than 1. Of course any internal state in the step becomes now subject to concurrent access and must 
+be protected accordingly.
+
+This is really usefull if you have a stateless step which is expected to process many inputs.
