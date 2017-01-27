@@ -10,7 +10,7 @@ Steps which have no unresolved dependencies are executed first - in parallel.
 <dependency>
   <artifactId>dataflow</artifactId>
   <groupId>no.systek.dataflow</groupId>
-  <version>0.1</version>
+  <version>0.2</version>
 </dependency>
 ```
 
