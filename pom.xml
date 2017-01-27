@@ -137,7 +137,7 @@
                 <executions>
                     <execution>
                         <id>default-report</id>
-                        <phase>package</phase>
+                        <phase>verify</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>
