@@ -23,16 +23,18 @@ import java.util.function.Consumer;
  * See CappuccinoTest
  * <p>
  */
-public abstract class Step {
+@SuppressWarnings("WeakerAccess")
+public abstract class Step<I, O> {
 
     private final String name;
     private final int maxParallelExecution;
-    private final List<Step> parents = new LinkedList<>();
-    private final List<Step> children = new LinkedList<>();
-    private final Queue<Object> msgBox = new ConcurrentLinkedQueue<>();
+    private final List<Step<?, I>> parents = new LinkedList<>();
+    private final List<Step<O, ?>> children = new LinkedList<>();
+    private final Queue<I> msgBox = new ConcurrentLinkedQueue<>();
     private final AtomicInteger scheduledJobs = new AtomicInteger();
     private final AtomicInteger lock = new AtomicInteger();
     private volatile int graphDepth;
+    protected volatile Consumer<O> onResult;
 
     public Step(int maxParallelExecution) {
         this(null, maxParallelExecution);
@@ -48,53 +50,53 @@ public abstract class Step {
     }
 
     public boolean executeTasksAndAwaitDone(
-            PriorityTaskQueue taskQueue,
-            ExecutorService executorService,
-            Consumer<Exception> exceptionListener,
-            Object input,
-            Consumer<Object> onResult,
-            long timeout,
-            TimeUnit unit) {
+        PriorityTaskQueue taskQueue,
+        ExecutorService executorService,
+        Consumer<Exception> exceptionListener,
+        Object input,
+        Consumer<O> onResult,
+        long timeout,
+        TimeUnit unit) {
+
+        if (!children.isEmpty()) {
+            throw new RuntimeException("This step has children; please start executing at the tail of the graph");
+        }
+        this.onResult = onResult;
 
         // walk the step graph: configure the graph depth on each step and find the root steps
-        HashSet<Step> roots = new HashSet<>();
+        HashSet<Step<Object, ?>> roots = new HashSet<>();
         configureTreeAndFindRoots(new HashSet<>(), roots);
 
         // start execution by scheduling tasks for all roots
-        roots.forEach(rootStep -> rootStep.post(input, taskQueue, onResult));
+        roots.forEach(rootStep -> rootStep.post(input, taskQueue));
 
         return taskQueue.executeTasksAndAwaitDone(executorService, exceptionListener, timeout, unit);
     }
 
-    public void dependsOn(DependencyCreator dependency) {
+    public void dependsOn(DependencyCreator<Object, I> dependency) {
         addParent(dependency.step);
-        dependency.create(this);
+        dependency.link(this);
     }
 
-    public DependencyCreator output() {
-        return new DependencyCreator(this) {
-            @Override
-            void create(Step dependency) {
-                children.add(dependency);
-            }
-        };
+    public DependencyCreator<Object, O> output() {
+        return new DependencyCreator<>((Step<Object, O>) this);
     }
 
-    public void post(Object input, PriorityTaskQueue taskQueue, Consumer<Object> onFinalResult) {
+    public void post(I input, PriorityTaskQueue taskQueue) {
         if (input != null) {
             msgBox.offer(input);
         }
 
         // try to schedule a new task on the thread pool which handles this new input
-        tryScheduleNextJob(taskQueue, onFinalResult);
+        tryScheduleNextJob(taskQueue);
     }
 
-    protected abstract void run(Object input, Consumer<Object> onResult);
+    protected abstract void run(I input, Consumer<O> onResult);
 
-    protected void afterRun(PriorityTaskQueue priorityTaskQueue, Consumer<Object> onFinalResult) {
+    protected void afterRun(PriorityTaskQueue taskQueue) {
     }
 
-    protected int configureTreeAndFindRoots(HashSet<Step> visited, HashSet<Step> roots) {
+    protected int configureTreeAndFindRoots(HashSet<Step<?, ?>> visited, HashSet<Step<Object, ?>> roots) {
         try {
             if (!visited.add(this)) {
                 return this.graphDepth;
@@ -103,9 +105,9 @@ public abstract class Step {
             int myDepth = 1;
 
             if (parents.isEmpty() || (parents.size() == 1 && visited.contains(parents.get(0)))) {
-                roots.add(this);
+                roots.add((Step<Object, ?>) this);
             } else {
-                for (Step parent : parents) {
+                for (Step<?, ?> parent : parents) {
                     int parentLevel = parent.configureTreeAndFindRoots(visited, roots);
                     if (parentLevel > myDepth) {
                         myDepth = parentLevel;
@@ -122,20 +124,20 @@ public abstract class Step {
         }
     }
 
-    private void tryScheduleNextJob(PriorityTaskQueue taskQueue, Consumer<Object> onFinalResult) {
+    private void tryScheduleNextJob(PriorityTaskQueue taskQueue) {
         // only one thread at a time here
         if (lock.getAndIncrement() == 0) {
             try {
                 while (msgBox.peek() != null && scheduledJobs.get() < maxParallelExecution) {
                     scheduledJobs.incrementAndGet();
-                    Object input = msgBox.poll();
+                    I input = msgBox.poll();
                     taskQueue.addTask(PriorityTaskQueue.HIGHEST_PRIORITY, pq -> {
                         try {
-                            run(input, output -> onOutputAvailable(output, pq, onFinalResult));
-                            afterRun(pq, onFinalResult);
+                            run(input, output -> onOutputAvailable(output, pq));
+                            afterRun(pq);
                         } finally {
                             scheduledJobs.decrementAndGet();
-                            tryScheduleNextJob(pq, onFinalResult);
+                            tryScheduleNextJob(pq);
                         }
                     });
                 }
@@ -143,25 +145,25 @@ public abstract class Step {
                 if (lock.getAndSet(0) != 1) {
                     // another thread tried to enter this block while we had the lock, re-run it in case new messages
                     // have arrived
-                    taskQueue.addTask(PriorityTaskQueue.HIGHEST_PRIORITY, pq2 -> tryScheduleNextJob(pq2, onFinalResult));
+                    taskQueue.addTask(PriorityTaskQueue.HIGHEST_PRIORITY, this::tryScheduleNextJob);
                 }
             }
         }
     }
 
-    protected void onOutputAvailable(Object output, PriorityTaskQueue pq, Consumer<Object> onFinalResult) {
+    protected void onOutputAvailable(O output, PriorityTaskQueue pq) {
         if (children.isEmpty()) {
-            onFinalResult.accept(output);
+            onResult.accept(output);
         } else {
-            children.forEach(s -> s.post(output, pq, onFinalResult));
+            children.forEach(s -> s.post(output, pq));
         }
     }
 
-    protected void addParent(Step parent) {
+    protected void addParent(Step<?, I> parent) {
         this.parents.add(parent);
     }
 
-    protected List<Step> getChildren() {
+    protected List<Step<O, ?>> getChildren() {
         return children;
     }
 
@@ -169,13 +171,15 @@ public abstract class Step {
         return graphDepth;
     }
 
-    protected abstract static class DependencyCreator {
-        private final Step step;
+    protected static class DependencyCreator<I, O> {
+        public final Step<I, O> step;
 
-        public DependencyCreator(Step step) {
+        public DependencyCreator(Step<I, O> step) {
             this.step = step;
         }
 
-        abstract void create(Step dependency);
+        public void link(Step<O, ?> child) {
+            step.children.add(child);
+        }
     }
 }

@@ -16,7 +16,7 @@ public abstract class AbstractStepTest {
     public void setup() {
         executorService = Executors.newFixedThreadPool(5);
         stepExecutor = new StepExecutor(executorService, s -> {
-        }, () -> null, 5, 10, TimeUnit.SECONDS);
+        }, () -> null, 5, 20, TimeUnit.SECONDS);
     }
 
     @After

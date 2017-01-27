@@ -14,6 +14,7 @@ import java.util.function.Supplier;
 /**
  * Helper to execute a graph of steps with default error handling
  */
+@SuppressWarnings({ "WeakerAccess", "unused" })
 public class StepExecutor {
     private final static Logger LOGGER = LoggerFactory.getLogger(StepExecutor.class);
 
@@ -40,10 +41,10 @@ public class StepExecutor {
         this.timeUnit = timeUnit;
     }
 
-    public List<Object> executeList(Step tail, Object input) {
+    public <O> List<O> executeList(Step<?, O> tail, Object input) {
 
         List<Exception> exceptions = new CopyOnWriteArrayList<>();
-        List<Object> results = new CopyOnWriteArrayList<>();
+        List<O> results = new CopyOnWriteArrayList<>();
 
         if (!tail.executeTasksAndAwaitDone(
                 new PriorityTaskQueue(maxParallelTasks, correlationIdGetter, correlationIdSettter),
@@ -64,16 +65,16 @@ public class StepExecutor {
         return new LinkedList<>(results);
     }
 
-    public List<Object> executeList(Step tail) {
+    public <O> List<O> executeList(Step<?, O> tail) {
         return executeList(tail, new Object());
     }
 
-    public Object execute(Step tail, Object input) {
-        List<Object> results = executeList(tail, input);
+    public <O> O execute(Step<?, O> tail, Object input) {
+        List<O> results = executeList(tail, input);
         return results.isEmpty() ? null : results.get(0);
     }
 
-    public Object execute(Step tail) {
+    public <O> O execute(Step<?, O> tail) {
         return execute(tail, new Object());
     }
 

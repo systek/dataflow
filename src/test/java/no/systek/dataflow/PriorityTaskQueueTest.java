@@ -1,7 +1,7 @@
 package no.systek.dataflow;
 
-import no.systek.dataflow.PriorityTaskQueue;
-import org.junit.Test;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -14,8 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import org.junit.Test;
 
 public class PriorityTaskQueueTest {
 
@@ -43,7 +42,7 @@ public class PriorityTaskQueueTest {
         ExecutorService executorService = Executors.newCachedThreadPool();
         Queue<Exception> exceptions = new LinkedList<>();
         assertThat(pq.executeTasksAndAwaitDone(executorService, exceptions::offer, 1, TimeUnit.SECONDS),
-                is(true));
+            is(true));
         assertThat(exceptions.size(), is(0));
         assertThat(successCounter.get(), is(parallelTasks));
         executorService.shutdown();
@@ -71,8 +70,9 @@ public class PriorityTaskQueueTest {
 
         ExecutorService executorService = Executors.newCachedThreadPool();
         Queue<Exception> exceptions = new LinkedList<>();
-        assertThat(pq.executeTasksAndAwaitDone(executorService, exceptions::offer, 1, TimeUnit.SECONDS),
-                is(true));
+        assertThat(
+            pq.executeTasksAndAwaitDone(executorService, exceptions::offer, 1, TimeUnit.SECONDS),
+            is(true));
         assertThat(exceptions.size(), is(0));
         assertThat(errorCounter.get(), is(0));
         executorService.shutdown();
@@ -108,8 +108,9 @@ public class PriorityTaskQueueTest {
 
         ExecutorService executorService = Executors.newCachedThreadPool();
         Queue<Exception> exceptions = new LinkedList<>();
-        assertThat(pq.executeTasksAndAwaitDone(executorService, exceptions::offer, 1, TimeUnit.SECONDS),
-                is(true));
+        assertThat(
+            pq.executeTasksAndAwaitDone(executorService, exceptions::offer, 1, TimeUnit.SECONDS),
+            is(true));
         assertThat(exceptions.size(), is(0));
         assertThat(errors.get(), is(0));
         assertThat(doneCounter.get(), is(4));
@@ -130,8 +131,9 @@ public class PriorityTaskQueueTest {
 
         ExecutorService executorService = Executors.newCachedThreadPool();
         Queue<Exception> exceptions = new LinkedList<>();
-        assertThat(pq.executeTasksAndAwaitDone(executorService, exceptions::offer, 1, TimeUnit.SECONDS),
-                is(true));
+        assertThat(
+            pq.executeTasksAndAwaitDone(executorService, exceptions::offer, 1, TimeUnit.SECONDS),
+            is(true));
         assertThat(exceptions.size(), is(0));
         assertThat(capcturedKorrelatjonsId.get(), is(korrelatjonsId));
         executorService.shutdown();
@@ -153,8 +155,9 @@ public class PriorityTaskQueueTest {
         });
         ExecutorService executorService = Executors.newCachedThreadPool();
         Queue<Exception> exceptions = new LinkedList<>();
-        assertThat(pq.executeTasksAndAwaitDone(executorService, exceptions::offer, 1, TimeUnit.SECONDS),
-                is(false));
+        assertThat(
+            pq.executeTasksAndAwaitDone(executorService, exceptions::offer, 1, TimeUnit.SECONDS),
+            is(false));
         assertThat(exceptions.size(), is(0));
         executorService.shutdown();
 
