@@ -134,9 +134,6 @@
                 <groupId>org.eluder.coveralls</groupId>
                 <artifactId>coveralls-maven-plugin</artifactId>
                 <version>4.3.0</version>
-                <configuration>
-                    <repoToken>b3pB5MCQXSvczWDaZryFuKRcrGz40Erte</repoToken>
-                </configuration>
                 <executions>
                     <execution>
                         <id>default-report</id>
