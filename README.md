@@ -64,14 +64,15 @@ The library includes a [ConditionalStep](https://github.com/systek/dataflow/blob
           v
     InGoodCondition?
           |
-   +-yes--+--yes---+
+   +--no--+--yes---+
    |               |
    v               v
 ThrowAway       Collect
 ```
 
 ### Collector step
-After a fork-out where processing is done in parallel, it might be desirable to join the output of those parallel steps again. This can be done with so called [CollectorStep](https://github.com/systek/dataflow/blob/master/src/main/java/no/systek/dataflow/steps/CollectorStep.java). 
+After a fork-out where processing is done in parallel, it might be desirable to join the output of those parallel steps again before continuing. 
+This can be done with so called [CollectorStep](https://github.com/systek/dataflow/blob/master/src/main/java/no/systek/dataflow/steps/CollectorStep.java). 
 
 For example, image you want to process an order which contains multiple order lines. Each order line is processed in parallel but shipping and invoicing is only once done once for entire order:
 
@@ -79,7 +80,7 @@ For example, image you want to process an order which contains multiple order li
                orderLineSplitter
                       |
                       v
-          parallelOrderLineProcessor
+          parallelOrderLineProcessor  // started in parallel for each line
                       |
                       v
               lineNeedsShipping
