@@ -1,24 +1,18 @@
 package no.systek.dataflow;
 
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import no.systek.dataflow.steps.CollectorStep;
+import no.systek.dataflow.steps.PairJoinStep;
+import no.systek.dataflow.types.*;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-import org.junit.Test;
-
-import no.systek.dataflow.steps.CollectorStep;
-import no.systek.dataflow.steps.PairJoinStep;
-import no.systek.dataflow.types.BlackCoffee;
-import no.systek.dataflow.types.Cappuccino;
-import no.systek.dataflow.types.FoamedMilk;
-import no.systek.dataflow.types.GrindedCoffee;
-import no.systek.dataflow.types.Order;
-import no.systek.dataflow.types.Water;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
 
 public class CappuccinoTest extends AbstractStepTest {
 
@@ -57,7 +51,7 @@ public class CappuccinoTest extends AbstractStepTest {
         CoffeeBrewer brew = new CoffeeBrewer();
 
         Step<Water, Water> heatWater = Steps.newParallel(water ->
-            work(new Water(random.nextInt(10) + 90), "Heating water"));
+                work(new Water(random.nextInt(10) + 90), "Heating water"));
 
         CappuccinoStep cappuccino = new CappuccinoStep();
 
@@ -107,8 +101,8 @@ public class CappuccinoTest extends AbstractStepTest {
 
         CoffeeBrewer brew = new CoffeeBrewer();
         Step<List<Water>, Water> heatWater = Steps.newParallelListStep(waters -> work(
-            waters.stream().map(water -> new Water(random.nextInt(10) + 90)).collect(Collectors.toList()),
-            "heating multiple waters at once (" + waters.size() + ")"));
+                waters.stream().map(water -> new Water(random.nextInt(10) + 90)).collect(Collectors.toList()),
+                "heating multiple waters at once (" + waters.size() + ")"));
 
         CollectorStep<Water> collector = Steps.newCollector(2);
         Step<List<Order>, Order> orderSplitter = Steps.newParallelListStep(orders -> orders);
@@ -134,9 +128,9 @@ public class CappuccinoTest extends AbstractStepTest {
         foamMilk.dependsOn(orderSplitter.output());
 
         List<Cappuccino> cappuccinos = stepExecutor.executeList(cappuccino, Arrays.asList(
-            new Order("Order1"),
-            new Order("order2"),
-            new Order("order3")));
+                new Order("Order1"),
+                new Order("order2"),
+                new Order("order3")));
         assertThat(cappuccinos.size(), is(3));
     }
 

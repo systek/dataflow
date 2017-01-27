@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/systek/dataflow.svg?branch=master)](https://travis-ci.org/systek/dataflow)
+[![Build Status](https://travis-ci.org/systek/dataflow.svg?branch=master)](https://travis-ci.org/systek/dataflow) 
+[![Coverage Status](https://coveralls.io/repos/github/systek/dataflow/badge.svg)](https://coveralls.io/github/systek/dataflow)
 
 # dataflow
 A Java library, which lets you define dependencies between tasks (called steps) and then execute the entire graph. 

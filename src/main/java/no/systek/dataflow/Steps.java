@@ -1,19 +1,21 @@
 package no.systek.dataflow;
 
+import no.systek.dataflow.steps.*;
+
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.function.*;
 
-import no.systek.dataflow.steps.CollectorStep;
-import no.systek.dataflow.steps.ConditionalStep;
-import no.systek.dataflow.steps.ListStep;
-import no.systek.dataflow.steps.PairJoinStep;
-
-@SuppressWarnings({ "WeakerAccess", "SameParameterValue", "unused" })
+@SuppressWarnings({"WeakerAccess", "SameParameterValue", "unused"})
 public final class Steps {
+
+    public static <O> SourceStep<O> newSource(Supplier<O> supplier) {
+        return new SourceStep<O>(null, 1) {
+            @Override
+            protected O get() {
+                return supplier.get();
+            }
+        };
+    }
 
     public static <I, O> Step<I, O> newSingle(Function<I, O> func) {
         return new SingleStep<I, O>(null) {
@@ -38,8 +40,8 @@ public final class Steps {
     }
 
     public static <Ileft, Iright, O> PairJoinStep<Ileft, Iright, O> newJoiner(
-        Predicate<Object> isLeft,
-        BiFunction<Ileft, Iright, O> func) {
+            Predicate<Object> isLeft,
+            BiFunction<Ileft, Iright, O> func) {
 
         return new PairJoinStep<Ileft, Iright, O>(null) {
             @Override
